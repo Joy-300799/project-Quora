@@ -279,6 +279,7 @@ const updateQuestion = async (req, res) => {
       const tagArr = tag.split(",").map((x) => x.trim());
       const uniqueTagArr = [...new Set(tagArr)];
       if (Array.isArray(tagArr)) {
+        questionData['addToSet']={}
         questionData["tag"] = uniqueTagArr;
       }
     }
