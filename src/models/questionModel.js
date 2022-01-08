@@ -6,7 +6,7 @@ const orderSchema = new mongoose.Schema(
     description: { type: String, required: true, trim: true },
     tag: [String],
     askedBy: { type: ObjectId, trim: true, ref: "User" },
-    deletedAt: { type: Date, default: null },
+    deletedAt: { type: Date },
     isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }

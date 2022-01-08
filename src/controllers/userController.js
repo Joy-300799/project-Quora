@@ -276,7 +276,6 @@ const updateUserProfile = async (req, res) => {
     let { fname, lname, email, phone } = requestBody;
 
     //validating user's firstName
-   
       if (!validator.validString(fname)) {
         return res.status(400).send({
           status: false,
@@ -286,7 +285,6 @@ const updateUserProfile = async (req, res) => {
     
 
     //Validating user's lastName
-    
       if (!validator.validString(lname)) {
         return res.status(400).send({
           status: false,
@@ -296,7 +294,6 @@ const updateUserProfile = async (req, res) => {
     
 
     //validating email address
-   
       if (!validator.validString(email)) {
         return res.status(400).send({
           status: false,
@@ -361,6 +358,7 @@ const updateUserProfile = async (req, res) => {
     return res.status(500).send({ Error: err.message });
   }
 };
+
 module.exports = {
   registerUser,
   loginUser,

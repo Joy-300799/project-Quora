@@ -15,7 +15,7 @@ const userAuth = async(req, res, next) => {
             return res.status(403).send({ status: false, message: `Invalid authentication token in request ` })
         }
         if (Date.now() > (decodeToken.exp) * 1000) {
-            return res.status(404).send({ status: false, message: `Session Expired, please login again` })
+            return res.status(403).send({ status: false, message: `Session Expired, please login again` })
         }
       
        req.userId = decodeToken.userId

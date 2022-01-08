@@ -1,5 +1,6 @@
 const questionModel = require("../models/questionModel");
 const userModel = require("../models/userModel");
+const answerModel = require("../models/answerModel");
 const validator = require("../utils/validator");
 
 //Creating questions
@@ -40,7 +41,12 @@ const createQuestion = async (req, res) => {
         message: `User doesn't exist by ${askedBy}.`,
       });
     }
-
+    if (searchUser.creditScore == 0) {
+      return res.status(400).send({
+        status: false,
+        message: "Your creditScore is 0, hence cannot post question.",
+      });
+    }
     //validation for description's request body
     if (!validator.isValid(description)) {
       return res.status(400).send({
@@ -64,6 +70,15 @@ const createQuestion = async (req, res) => {
     }
 
     const saveQuestion = await questionModel.create(questionData);
+    const deductCreditScore = searchUser.creditScore - 100;
+
+    if (saveQuestion) {
+      await userModel.findOneAndUpdate(
+        { _id: askedBy },
+        { creditScore: deductCreditScore }
+      );
+    }
+
     return res.status(201).send({
       status: true,
       message: "Question posted Successfully.",
@@ -160,16 +175,33 @@ const getQuestionById = async function (req, res) {
       _id: questionId,
       isDeleted: false,
     });
+
     if (!findQuestion) {
       return res.status(404).send({
         status: false,
         message: `No questions exists by ${questionId}`,
       });
     }
+
+    const findAnswersOfThisQuestion = await answerModel
+      .find({ questionId: questionId })
+      .sort({ createdAt: -1 })
+      .select({ createdAt: 0, updatedAt: 0, __v: 0 });
+
+    const description = findQuestion.description;
+    const tag = findQuestion.tag;
+    const askedBy = findQuestion.askedBy;
+
+    const structureForResponseBody = {
+      description,
+      tag,
+      askedBy,
+      answers: findAnswersOfThisQuestion,
+    };
     return res.status(200).send({
       status: true,
       message: "Question fetched successfully.",
-      data: findQuestion,
+      data: structureForResponseBody,
     });
   } catch (err) {
     return res.status(500).send({ status: false, Error: err.message });
@@ -181,17 +213,88 @@ const updateQuestion = async (req, res) => {
   try {
     const questionId = req.questionId;
     let requestBody = req.body;
-    const { tag, desciption } = requestBody;
+    const { tag, description } = requestBody;
 
     //Validating questionId.
-    if(!validator.isValidObjectId(questionId)){
-        return res.status(400).send({status:false,message:`${questionId} is invalid questionId in URL params.`})
+    if (!validator.isValidObjectId(questionId)) {
+      return res.status(400).send({
+        status: false,
+        message: `${questionId} is invalid questionId in URL params.`,
+      });
     }
 
     //Validating empty requestBody.
-    if(!validator.isValidRequestBody(requestBody)){
-        return res.status(400).send({status:false,message:`Empty request body isn't valid for updatation.`})
+    if (!validator.isValidRequestBody(requestBody)) {
+      return res.status(400).send({
+        status: false,
+        message: `Empty request body isn't valid for updatation.`,
+      });
     }
+
+    //validating tag.
+    if (!validator.validString(tag)) {
+      return res.status(400).send({
+        status: false,
+        message: "Tag cannot be empty for updatation.",
+      });
+    }
+
+    //validating description
+    if (!validator.validString(description)) {
+      return res.status(400).send({
+        status: false,
+        message: `Description cannot be empty for updadtation.`,
+      });
+    }
+
+    const question = await questionModel.findOne({
+      _id: questionId,
+      isDeleted: false,
+    });
+
+    if (!question) {
+      return res.status(404).send({
+        status: false,
+        message: `Question doesn't exists by ${questionId}`,
+      });
+    }
+
+    //Authentication & authorization
+    let userId = question.askedBy;
+    if (userId != userIdFromToken) {
+      return res.status(401).send({
+        status: false,
+        message: `Unauthorized access! ${userId} is not a logged in user.`,
+      });
+    }
+
+    //Setting description & tag to an empty object.
+    const questionData = {};
+    if (description) {
+      if (!Object.hasOwnProperty(questionData, "$set"))
+        questionData["$set"] = {};
+      questionData["$set"]["description"] = description;
+    }
+    if (tag) {
+      const tagArr = tag.split(",").map((x) => x.trim());
+      const uniqueTagArr = [...new Set(tagArr)];
+      if (Array.isArray(tagArr)) {
+        questionData["tag"] = uniqueTagArr;
+      }
+    }
+
+    questionData.updatedAt = new Date();
+    const updateQuestion = await questionModel.findOneAndUpdate(
+      { _id: questionId },
+      questionData,
+      { new: true }
+    );
+
+    return res.status(200).send({
+      status: true,
+      message: "Question updated successfully",
+      data: updateQuestion,
+    });
   } catch (err) {
     return res.status(500).send({ Error: err.message });
   }
@@ -200,10 +303,54 @@ const updateQuestion = async (req, res) => {
 //Delete questions -> isDeleted : true
 const deleteQuestion = async (req, res) => {
   try {
+    const questionId = req.params.questionId;
+    let userIdFromToken = req.userId;
+
+    //validation for questionId
+    if (!validator.isValidObjectId(questionId)) {
+      return res.status(400).send({
+        status: false,
+        message: `${questionId} is not a valid question id`,
+      });
+    }
+
+    const findQuestion = await questionModel.findOne({
+      _id: questionId,
+    });
+    if (!findQuestion) {
+      return res.status(404).send({
+        status: false,
+        message: `Question not found for ${questionId}`,
+      });
+    }
+
+    //Authentication & authorization
+    let userId = findQuestion.askedBy;
+    if (userId != userIdFromToken) {
+      return res.status(401).send({
+        status: false,
+        message: `Unauthorized access! ${userId} is not a logged in user.`,
+      });
+    }
+
+    if (findQuestion.isDeleted == true) {
+      return res
+        .status(404)
+        .send({ status: false, message: `Question has been already deleted.` });
+    }
+
+    await questionModel.findOneAndUpdate(
+      { _id: questionId },
+      { $set: { isDeleted: true, deletedAt: new Date() } }
+    );
+    return res
+      .status(204)
+      .send({ status: true, message: `Question deleted successfully.` });
   } catch (err) {
     return res.status(500).send({ Error: err.message });
   }
 };
+
 module.exports = {
   createQuestion,
   getAllQuestion,
