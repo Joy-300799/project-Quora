@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const ObjectId = mongoose.Schema.Types.ObjectId;
 
-const orderSchema = new mongoose.Schema(
+const questionSchema = new mongoose.Schema(
   {
     description: { type: String, required: true, trim: true },
     tag: [String],
@@ -12,4 +12,4 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Question", orderSchema);
+module.exports = mongoose.model("Question", questionSchema);

@@ -236,7 +236,7 @@ const deleteAnswer = async function (req, res) {
     if (!findAnswer) {
       return res
         .status(404)
-        .send({ status: false, message: `No answer found by ${answerId}` });
+        .send({ status: false, message: `No answer exists by ${answerId}` });
     }
 
     let answeredBy = findAnswer.answeredBy;
@@ -251,7 +251,7 @@ const deleteAnswer = async function (req, res) {
 
     await answerModel.findOneAndUpdate(
       { _id: answerId },
-      { $set: { isDeleted: true, deletedAt: new Date() } }
+      { $set: { isDeleted: true} }
     );
 
     return res

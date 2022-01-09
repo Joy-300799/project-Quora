@@ -177,7 +177,7 @@ const loginUser = async (req, res) => {
       {
         userId: userId,
         iat: Math.floor(Date.now() / 1000), //time of issuing the token.
-        exp: Math.floor(Date.now() / 1000) + 3600 * 24, //setting token expiry time limit.
+        exp: Math.floor(Date.now() / 1000) + 3600 * 24, //setting token expiry time limit of 24hr.
       },
       secretKey
     );
@@ -273,7 +273,7 @@ const updateUserProfile = async (req, res) => {
     }
 
     // Extract params
-    let { fname, lname, email, phone } = requestBody;
+    let { fname, lname, email, phone,password,creditScore } = requestBody;
 
     //validating user's firstName
       if (!validator.validString(fname)) {
@@ -341,9 +341,17 @@ const updateUserProfile = async (req, res) => {
         });
       }
     }
+    
+    if(!validator.validString(password)){
+      return res.status(400).send({status:false,message:`Password is not changeable.`})
+    }
+    
+    if(creditScore){
+      return res.status(400).send({status:false,message:`CreditSCore cannot be updated. Get creditScore by answering any question.`})
+    }
 
        //object destructuring for response body.
-       let changeProfileDetails = await userModel.findOneAndUpdate({ _id: userId }, {
+       let changedProfileDetails = await userModel.findOneAndUpdate({ _id: userId }, {
         $set: {
             fname: fname,
             lname: lname,
@@ -352,7 +360,7 @@ const updateUserProfile = async (req, res) => {
         }
     }, { new: true })
 
-    return res.status(200).send({ status: true, data: changeProfileDetails })
+    return res.status(200).send({ status: true, data: changedProfileDetails })
 
   } catch (err) {
     return res.status(500).send({ Error: err.message });
@@ -363,5 +371,5 @@ module.exports = {
   registerUser,
   loginUser,
   getUserProfile,
-  updateUserProfile,
-};
+  updateUserProfile
+}

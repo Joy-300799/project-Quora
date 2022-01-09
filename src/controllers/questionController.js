@@ -30,7 +30,7 @@ const createQuestion = async (req, res) => {
     if (askedBy != userIdFromToken) {
       return res.status(401).send({
         status: false,
-        message: `Unauthorized access! User's info doesn't match`,
+        message: `Unauthorized access! ${askedBy} is not a logged in user.`,
       });
     }
 
@@ -89,7 +89,7 @@ const createQuestion = async (req, res) => {
   }
 };
 
-//Fetch all questions.
+//Fetch all questions with their answers.
 const getAllQuestion = async (req, res) => {
   try {
     let filterQuery = { isDeleted: false };
@@ -118,41 +118,89 @@ const getAllQuestion = async (req, res) => {
       }
 
       if (sort) {
-        if (!(sort == "ascending" || sort == "descending")) {
+        if (
+          !(
+            sort.toLowerCase() == "ascending" ||
+            sort.toLowerCase() == "descending"
+          )
+        ) {
           return res.status(400).send({
             message: `Only 'ascending' & 'descending' are allowed to sort.`,
           });
         }
+        if (sort.toLowerCase() === "ascending") {
+          var sortValue = 1;
+        }
 
-        const sortedQuestions = await questionModel
+        if (sort.toLowerCase() === "descending") {
+          var sortValue = -1;
+        }
+
+        let findQuestionsByTag = await questionModel
           .find(filterQuery)
-          .sort({ createdAt: sort });
+          .lean()
+          .sort({ createdAt: sortValue })
+          .select({ createdAt: 0, updatedAt: 0, __v: 0 });
+        //console.log(findQuestionsByTag);
 
-        //console.log(sortedQuestions);
+        for (i in findQuestionsByTag) {
+          let answer = await answerModel
+            .find({ questionId: findQuestionsByTag[i]._id })
+            .select({ text: 1, answeredBy: 1 });
+          // console.log(answer)
 
-        if (Array.isArray(sortedQuestions) && sortedQuestions.length === 0) {
-          return res
-            .status(404)
-            .send({ status: false, message: "No Questions found" });
+          findQuestionsByTag[i].answers = answer;
+          // console.log(findQuestionsByTag[i])
+        }
+
+        if (findQuestionsByTag.length == 0) {
+          return res.status(400).send({
+            status: false,
+            message: `No Question found by tag - ${tag}`,
+          });
         }
 
         return res.status(200).send({
           status: true,
-          message: "Questions list",
-          data: sortedQuestions,
+          message: "Questions List",
+          data: findQuestionsByTag,
         });
       }
 
-      const findQuestionsByTag = await questionModel.find(filterQuery);
+      //lean()-> It boost the DB query speed and helps to assign the values to the key without setting the key explicitly. 
+      let findQuestionsByTag = await questionModel
+        .find(filterQuery)
+        .lean()
+        .select({ createdAt: 0, updatedAt: 0, __v: 0 });
+      //console.log(findQuestionsByTag);
+
+      for (i in findQuestionsByTag) {
+        let answer = await answerModel
+          .find({ questionId: findQuestionsByTag[i]._id })
+          .select({ text: 1, answeredBy: 1 });
+        // console.log(answer)
+
+        findQuestionsByTag[i].answers = answer;
+        // console.log(findQuestionsByTag[i])
+      }
+
+      if (findQuestionsByTag.length == 0) {
+        return res.status(400).send({
+          status: false,
+          message: `No Question found by tag - ${tag}`,
+        });
+      }
+
       return res.status(200).send({
         status: true,
         message: "Questions List",
         data: findQuestionsByTag,
       });
     }
-    return res
-      .status(400)
-      .send({ status: false, message: "Invalid request query parameters." });
+    return res.status(400).send({
+      status: false,
+      message: "No filters provided to search questions.",
+    });
   } catch (err) {
     return res.status(500).send({ Error: err.message });
   }
@@ -211,8 +259,10 @@ const getQuestionById = async function (req, res) {
 //Update questions description & tag.
 const updateQuestion = async (req, res) => {
   try {
-    const questionId = req.questionId;
+    const questionId = req.params.questionId;
     let requestBody = req.body;
+    let userIdFromToken = req.userId;
+
     const { tag, description } = requestBody;
 
     //Validating questionId.
@@ -243,7 +293,7 @@ const updateQuestion = async (req, res) => {
     if (!validator.validString(description)) {
       return res.status(400).send({
         status: false,
-        message: `Description cannot be empty for updadtation.`,
+        message: `Description cannot be empty for updatation.`,
       });
     }
 
@@ -279,8 +329,8 @@ const updateQuestion = async (req, res) => {
       const tagArr = tag.split(",").map((x) => x.trim());
       const uniqueTagArr = [...new Set(tagArr)];
       if (Array.isArray(tagArr)) {
-        questionData['addToSet']={}
-        questionData["tag"] = uniqueTagArr;
+        questionData["$addToSet"] = {};
+        questionData["$addToSet"]["tag"] = uniqueTagArr;
       }
     }
 
@@ -345,7 +395,7 @@ const deleteQuestion = async (req, res) => {
       { $set: { isDeleted: true, deletedAt: new Date() } }
     );
     return res
-      .status(204)
+      .status(200)
       .send({ status: true, message: `Question deleted successfully.` });
   } catch (err) {
     return res.status(500).send({ Error: err.message });
@@ -357,5 +407,5 @@ module.exports = {
   getAllQuestion,
   getQuestionById,
   updateQuestion,
-  deleteQuestion,
+  deleteQuestion
 };
