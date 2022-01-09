@@ -3,7 +3,7 @@ const userModel = require("../models/userModel");
 const answerModel = require("../models/answerModel");
 const validator = require("../utils/validator");
 
-const createAnswer = async function (req, res) {
+const createAnswer = async(req, res) => {
   try {
     let requestBody = req.body;
     let userIdFromToken = req.userId;
@@ -89,7 +89,7 @@ const createAnswer = async function (req, res) {
 
     return res.status(201).send({
       status: true,
-      message: "Question answered successfully.",
+      message: "Question answered successfully & creditScore of 200 added to your account.",
       data: saveAnswer,
     });
   } catch (err) {
@@ -150,7 +150,8 @@ const updateAnswer = async (req, res) => {
     const requestBody = req.body;
     const answerId = req.params.answerId;
     const userIdFromToken = req.userId;
-    let { text } = requestBody;
+
+    let { text } = requestBody; //params extraction
 
     //validation for request body
     if (!validator.isValidRequestBody(requestBody)) {
@@ -214,7 +215,8 @@ const updateAnswer = async (req, res) => {
   }
 };
 
-const deleteAnswer = async function (req, res) {
+//deleting answer - Whoever posted it can they can delete it.
+const deleteAnswer = async (req, res)=> {
   try {
     const params = req.params;
     const answerId = params.answerId;
@@ -228,7 +230,7 @@ const deleteAnswer = async function (req, res) {
       });
     }
 
-    //Finding answer which has to be deleted.
+    //Finding answer which has to be delete.
     const findAnswer = await answerModel.findOne({
       _id: answerId,
       isDeleted: false,
@@ -236,7 +238,7 @@ const deleteAnswer = async function (req, res) {
     if (!findAnswer) {
       return res
         .status(404)
-        .send({ status: false, message: `No answer exists by ${answerId}` });
+        .send({ status: false, message: `No answer exists by ${answerId} or has been already deleted.`});
     }
 
     let answeredBy = findAnswer.answeredBy;
