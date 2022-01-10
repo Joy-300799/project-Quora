@@ -135,42 +135,12 @@ const getAllQuestion = async (req, res) => {
         if (sort.toLowerCase() === "descending") {
           var sortValue = -1;
         }
-
-        let findQuestionsByTag = await questionModel
-          .find(filterQuery)
-          .lean()
-          .sort({ createdAt: sortValue })
-          .select({ createdAt: 0, updatedAt: 0, __v: 0 });
-        //console.log(findQuestionsByTag);
-
-        for (i in findQuestionsByTag) {
-          let answer = await answerModel
-            .find({ questionId: findQuestionsByTag[i]._id })
-            .select({ text: 1, answeredBy: 1 });
-          // console.log(answer)
-
-          findQuestionsByTag[i].answers = answer;
-          // console.log(findQuestionsByTag[i])
-        }
-
-        if (findQuestionsByTag.length == 0) {
-          return res.status(400).send({
-            status: false,
-            message: `No Question found by tag - ${tag}`,
-          });
-        }
-
-        return res.status(200).send({
-          status: true,
-          message: "Questions List",
-          data: findQuestionsByTag,
-        });
       }
 
       //lean()-> It boost the DB query speed and helps to assign the values to the key without setting the key explicitly. 
       let findQuestionsByTag = await questionModel
         .find(filterQuery)
-        .lean()
+        .lean().sort({createdAt:sortValue})
         .select({ createdAt: 0, updatedAt: 0, __v: 0 });
       //console.log(findQuestionsByTag);
 

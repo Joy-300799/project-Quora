@@ -3,7 +3,7 @@ const userModel = require("../models/userModel");
 const answerModel = require("../models/answerModel");
 const validator = require("../utils/validator");
 
-const createAnswer = async(req, res) => {
+const createAnswer = async (req, res) => {
   try {
     let requestBody = req.body;
     let userIdFromToken = req.userId;
@@ -89,7 +89,8 @@ const createAnswer = async(req, res) => {
 
     return res.status(201).send({
       status: true,
-      message: "Question answered successfully & creditScore of 200 added to your account.",
+      message:
+        "Question answered successfully & creditScore of 200 added to your account.",
       data: saveAnswer,
     });
   } catch (err) {
@@ -163,12 +164,10 @@ const updateAnswer = async (req, res) => {
 
     //Validating answerId.
     if (!validator.isValidObjectId(answerId)) {
-      return res
-        .status(400)
-        .send({
-          status: false,
-          message: `${answerId} is not a valid answerId`,
-        });
+      return res.status(400).send({
+        status: false,
+        message: `${answerId} is not a valid answerId`,
+      });
     }
 
     //finding answer document where to update.
@@ -216,11 +215,22 @@ const updateAnswer = async (req, res) => {
 };
 
 //deleting answer - Whoever posted it can they can delete it.
-const deleteAnswer = async (req, res)=> {
+const deleteAnswer = async (req, res) => {
   try {
     const params = req.params;
     const answerId = params.answerId;
     const userIdFromToken = req.userId;
+    let requestBody = req.body;
+
+    const { answeredBy, questionId } = requestBody;
+
+    //validation for request body
+    if (!validator.isValidRequestBody(requestBody)) {
+      return res.status(400).send({
+        status: false,
+        message: "Empty body.Please provide a request body to delete.",
+      });
+    }
 
     //validation for answerId
     if (!validator.isValidObjectId(answerId)) {
@@ -230,18 +240,35 @@ const deleteAnswer = async (req, res)=> {
       });
     }
 
-    //Finding answer which has to be delete.
-    const findAnswer = await answerModel.findOne({
-      _id: answerId,
-      isDeleted: false,
-    });
-    if (!findAnswer) {
-      return res
-        .status(404)
-        .send({ status: false, message: `No answer exists by ${answerId} or has been already deleted.`});
+     //validating empty answeredBy id.
+     if (!validator.isValid(answeredBy)) {
+      return res.status(400).send({
+        status: false,
+        message: `answeredBy is required to delete the answer.`,
+      });
     }
 
-    let answeredBy = findAnswer.answeredBy;
+    if (!validator.isValidObjectId(answeredBy)) {
+      return res.status(400).send({
+        status: false,
+        message: `${answeredBy} is not a valid answeredBy id`,
+      });
+    }
+
+    //validating empty questionId
+    if (!validator.isValid(questionId)) {
+      return res.status(400).send({
+        status: false,
+        message: `questionId is required to delete the answer.`,
+      });
+    }
+
+    if (!validator.isValidObjectId(questionId)) {
+      return res.status(400).send({
+        status: false,
+        message: `${questionId} is not a valid question id`,
+      });
+    }
 
     //Authentication & Authorization
     if (answeredBy != userIdFromToken) {
@@ -251,10 +278,24 @@ const deleteAnswer = async (req, res)=> {
       });
     }
 
-    await answerModel.findOneAndUpdate(
-      { _id: answerId },
-      { $set: { isDeleted: true} }
-    );
+    //Finding answer which has to be delete.
+    const findAnswer = await answerModel.findOne({
+      _id: answerId,
+      isDeleted: false,
+    });
+    if (!findAnswer) {
+      return res.status(404).send({
+        status: false,
+        message: `No answer exists by ${answerId} or has been already deleted.`,
+      });
+    }
+
+    if (findAnswer.answeredBy == answeredBy) {
+      await answerModel.findOneAndUpdate(
+        { _id: answerId },
+        { $set: { isDeleted: true } }
+      );
+    }
 
     return res
       .status(200)
