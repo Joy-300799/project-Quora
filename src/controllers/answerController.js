@@ -290,6 +290,10 @@ const deleteAnswer = async (req, res) => {
       });
     }
 
+    if (findAnswer.answeredBy != answeredBy) {
+      return res.status(400).send({status:false,message:`Unable to delete the answer because it is not answered by you.`})
+    }
+
     if (findAnswer.answeredBy == answeredBy) {
       await answerModel.findOneAndUpdate(
         { _id: answerId },
@@ -306,11 +310,11 @@ const deleteAnswer = async (req, res) => {
       Error: err.message,
     });
   }
-};
+}
 
 module.exports = {
   createAnswer,
   getAllAnswers,
   updateAnswer,
-  deleteAnswer,
-};
+  deleteAnswer
+}

@@ -137,7 +137,7 @@ const getAllQuestion = async (req, res) => {
         }
       }
 
-      //lean()-> It boost the DB query speed and helps to assign the values to the key without setting the key explicitly. 
+      //lean()-> It boost the DB query speed and helps to assign the values to the key without setting the key explicitly. & it returns plain old javascript document(POJO). 
       let findQuestionsByTag = await questionModel
         .find(filterQuery)
         .lean().sort({createdAt:sortValue})
