@@ -3,7 +3,7 @@ const answerSchema = new mongoose.Schema(
   {
     answeredBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Project6_Users",
       required: true,
     },
     text: {
@@ -13,11 +13,11 @@ const answerSchema = new mongoose.Schema(
     },
     questionId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Question",
+      ref: "Project6_Questions",
       required: true,
     },
     isDeleted:{type:Boolean, default: false}
   },
   { timestamps: true }
 );
-module.exports = mongoose.model("Answer", answerSchema);
+module.exports = mongoose.model("Project6_answers", answerSchema);

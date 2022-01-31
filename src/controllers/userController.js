@@ -345,6 +345,9 @@ const updateUserProfile = async (req, res) => {
     if(!validator.validString(password)){
       return res.status(400).send({status:false,message:`Password is not changeable.`})
     }
+    if(password){
+      return res.status(400).send({status:false,message:"Password cannot be changed."})
+    }
     
     if(creditScore){
       return res.status(400).send({status:false,message:`CreditSCore cannot be updated. Get creditScore by answering any question.`})
