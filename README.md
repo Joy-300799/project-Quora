@@ -1,5 +1,3 @@
-# radium
-
 ## Project - Quora
 
 ### Key points
@@ -9,8 +7,6 @@
 - Please include all the basic validations in code this time. For example you should write your own code to ensure that a userId passed as the path param must be a valid ObjectId and in such a case the error should be handled within the try block and not the catch block. This applies to all the validations whose failure lead to a 500 error. A valid error should be 400, 401, 403 or 404, as the case may be.
 
 #### Project conventions
-
-- You must submit an explainer video at the end of each day, and not at the end of a feature on an individual basis. If you work for say 8 days in total at this project, there should be 8 videos submitted by you at the end of each day mandatorily.
 - In this project also we will work feature wise. That means we pick one resource/ sub-resource like user, answer, question, etc at a time. All the apis on one specific resource would come under one feature. The steps would be:
   1) We create it's model.
   2) We build it's APIs.
@@ -18,9 +14,8 @@
   4) We will repeat steps from Step 1 to Step 3 for each feature in this project.
 - This project is divided into 3 features namely User, Question and Answer. You need to work on a single feature at a time. Once that is completed as per above mentioned steps. You will be instructed to move to the next Feature.
 
-- In this project we are changing how we send token with a request. Instead of using a custom header key like **x-api-key**, you need to use **Authorization** header and send the JWT token as **Bearer token**.
-- Create a database Database`. You can clean the db you previously used and reuse that.
-- This time each group should have a *single git branch*. Coordinate amongst yourselves by ensuring every next person pulls the code last pushed by a team mate. You branch will be checked as part of the demo. Branch name should follow the naming convention `project/QuoraX`
+- In this project we are changing how we send token with a request. Instead of using a custom header key like **x-api-key**, you need to use **Authorization** header and send the JWT token as `Bearer token`.
+- Branch name should follow the naming convention `project/Quora`
 - Follow the naming conventions exactly as instructed.
 
 ## Phase I
